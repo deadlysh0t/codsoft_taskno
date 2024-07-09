@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Table</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #f0f0f0;
+        margin: 0;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 50%;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        padding: 8px;
+        border: 1px solid #0c0808;
+      }
+
+      input[type="text"] {
+        width: 50%;
+        padding: 10px;
+        box-sizing: border-box;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 5px 10px;
+        background-color: #1564a5;
+        color: #fafafa;
+        border: none;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      input[type="checkbox"] {
+        transition: all 1s ease-in-out;
+      }
+
+      input[type="checkbox"]:checked {
+        transform: scale(1.5);
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>ToDoList</h1>
+    <table id="taskTable">
+      <thead>
+        <tr>
+          <th>Completed</th>
+          <th>Task</th>
+          <th>Actions</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <input type="text" id="newTask" placeholder="Enter your task">
+    <button id="addTask">Add Task</button>
+    <script>
+      const taskTable = document.getElementById('taskTable').getElementsByTagName('tbody')[0];
+      const newTaskInput = document.getElementById('newTask');
+      const addTaskButton = document.getElementById('addTask');
+
+      function generateUniqueId() {
+        return Math.random().toString(36).substring(2, 15) + Math.abs(Date.now()).toString(36).substring(2, 7);
+      }
+
+      function loadTasksFromLocalStorage() {
+        const tasks = localStorage.getItem('tasks');
+        return tasks ? JSON.parse(tasks) : [];
+      }
+
+      function saveTasksToLocalStorage(tasks) {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+      }
+
+      function displayTasks(tasks) {
+        taskTable.innerHTML = '';
+        tasks.forEach(task => {
+          const row = document.createElement('tr');
+
+          const completedCell = document.createElement('td');
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          completedCell.appendChild(checkbox);
+
+          const taskCell = document.createElement('td');
+          taskCell.textContent = task.text;
+          taskCell.id = 'task-' + task.id;
+
+          const dateCell = document.createElement('td');
+          const dateInput = document.createElement("input");
+          dateInput.type = "date";
+          dateInput.value = task.date || '';
+          dateInput.addEventListener('change', () => {
+            task.date = dateInput.value;
+            saveTasksToLocalStorage(tasks);
+          });
+          dateCell.appendChild(dateInput);
+
+          const actionCell = document.createElement('td');
+          const removeButton = document.createElement('button');
+          removeButton.textContent = 'Remove';
+          removeButton.addEventListener('click', () => {
+            removeTask(task.id);
+          });
+          const editButton = document.createElement('button');
+          editButton.textContent = 'Edit';
+          editButton.addEventListener('click', () => {
+            editTask(task.id);
+          });
+          actionCell.appendChild(removeButton);
+          actionCell.appendChild(editButton);
+
+          row.appendChild(completedCell);
+          row.appendChild(taskCell);
+          row.appendChild(actionCell);
+          row.appendChild(dateCell);
+
+          taskTable.appendChild(row);
+        });
+      }
+
+      function addTask(text) {
+        const tasks = loadTasksFromLocalStorage();
+        const newTask = {
+          id: generateUniqueId(),
+          text: text,
+          date: ''
+        };
+        tasks.push(newTask);
+        saveTasksToLocalStorage(tasks);
+        displayTasks(tasks);
+        newTaskInput.value = '';
+      }
+
+      function editTask(id) {
+        const tasks = loadTasksFromLocalStorage();
+        const task = tasks.find(task => task.id === id);
+        if (task) {
+          const taskCell = document.getElementById('task-' + id);
+          const taskInput = document.createElement('input');
+          taskInput.type = 'text';
+          taskInput.value = task.text;
+
+          taskInput.addEventListener('change', () => {
+            task.text = taskInput.value;
+            saveTasksToLocalStorage(tasks);
+            displayTasks(tasks);
+          });
+
+          taskCell.innerHTML = '';
+          taskCell.appendChild(taskInput);
+          taskInput.focus();
+        }
+      }
+
+      function removeTask(id) {
+        const tasks = loadTasksFromLocalStorage();
+        const filteredTasks = tasks.filter(task => task.id !== id);
+        saveTasksToLocalStorage(filteredTasks);
+        displayTasks(filteredTasks);
+      }
+
+      addTaskButton.addEventListener('click', () => {
+        const taskText = newTaskInput.value.trim();
+        if (taskText) {
+          addTask(taskText);
+        } else {
+          alert('Please enter a task.');
+        }
+      });
+
+      displayTasks(loadTasksFromLocalStorage());
+    </script>
+  </body>
+
+</html>
